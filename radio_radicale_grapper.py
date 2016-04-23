@@ -1,6 +1,10 @@
 import urllib2
 import re
 
+#https://www.radioradicale.it/archivio?raggruppamenti_radio=6&field_data_1&field_data_2&page=0
+#https://www.radioradicale.it/archivio?raggruppamenti_radio=6&field_data_1&field_data_2&page=1
+
+#<li class="pager__item pager__item--last"><a title="Vai all'ultima pagina" href="/archivio?raggruppamenti_radio=6&amp;field_data_1=&amp;field_data_2=&amp;page=1083">ultima »</a></li>
 
 
 #retrieve file from process session page
@@ -55,5 +59,5 @@ with open("test.ts", "a") as myfile:
 
 
 
-print 'finito2'
+print 'finito'
 
