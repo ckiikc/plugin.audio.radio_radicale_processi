@@ -55,5 +55,5 @@ with open("test.ts", "a") as myfile:
 
 
 
-print 'finito'
+print 'finito2'
 
