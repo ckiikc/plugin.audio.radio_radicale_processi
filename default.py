@@ -72,7 +72,7 @@ def play_song(url):
 def main():
     args = urlparse.parse_qs(sys.argv[2][1:])
     mode = args.get('mode', None)
-    play_song('http://audio-aac.radioradicale.it:1935/aac-1/_definst_/2016/04/22/MP830842.m4a/chunklist_w127217515.m3u8')
+    play_song('https://archive.org/download/testmp3testfile/mpthreetest.mp3')
     
     
 if __name__ == '__main__':
