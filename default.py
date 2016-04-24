@@ -72,7 +72,7 @@ def play_song(url):
 def main():
     args = urlparse.parse_qs(sys.argv[2][1:])
     mode = args.get('mode', None)
-    play_song('https://archive.org/download/testmp3testfile/mpthreetest.mp3')
+    play_song('https://ia802508.us.archive.org/5/items/testmp3testfile/mpthreetest.mp3')
     
     
 if __name__ == '__main__':
