@@ -72,8 +72,19 @@ def play_song(url):
 def main():
     args = urlparse.parse_qs(sys.argv[2][1:])
     mode = args.get('mode', None)
-    play_song('https://ia802508.us.archive.org/5/items/testmp3testfile/mpthreetest.mp3')
     
+    # initial launch of add-on
+    if mode is None:
+        # get the HTML for http://www.theaudiodb.com/testfiles/
+        page = get_page(sample_page)
+        # get the content needed from the page
+        content = parse_page(page)
+        # display the list of songs in Kodi
+        build_song_list(content)
+    # a song from the list has been selected
+    elif mode[0] == 'stream':
+        # pass the url of the song to play_song
+        play_song(args['url'][0])
     
 if __name__ == '__main__':
     sample_page = 'http://www.theaudiodb.com/testfiles/'
