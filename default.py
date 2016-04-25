@@ -1,5 +1,6 @@
 # https://docs.python.org/2.7/
 import os
+import logging
 import sys
 import urllib
 import urlparse
@@ -11,54 +12,79 @@ import xbmcplugin
 import requests
 # http://www.crummy.com/software/BeautifulSoup/bs4/doc/
 from bs4 import BeautifulSoup
+#from urllib.request import urlopen
+import re
+import HTMLParser
+
+
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+radicale_url='https://www.radioradicale.it/'
+actual_page=0
+
+def get_page(url):
+    #response = urlopen(url)
+    #html = response.read().decode("utf-8")
+    html = requests.get(url).text
+    return html
+
+def get_chunks_file(url):
+    html = get_page(url)
+    p=re.findall('(http://audio\-aac\.radioradicale\.it:1935/aac\-1/_definst_/[0-9]{4}/[0-9]{2}/[0-9]{2}/.+\.m4a/)playlist\.m3u8',html)
+    tracker_base_url=p[0]
+    tracker_file_txt = get_page(tracker_base_url + 'playlist.m3u8')
+    tracker=re.findall('chunklist.*\.m3u8',tracker_file_txt)
+    chunks_url=tracker_base_url + tracker[0]
+    return chunks_url
+
+
+def parse_udienze_list_page(page_num):
+    udienze_list={}
+    index=1
+    html=get_page('https://www.radioradicale.it/archivio?raggruppamenti_radio=6&field_data_1&field_data_2&page='+str(page_num))
+    udienze=re.findall('<a href="(/scheda/[0-9]+?/processo.+?)">(.+?)</a>',html)
+    for udienza in udienze:
+        chunks_url=get_chunks_file(radicale_url+udienza[0])
+        udienze_list.update({index: {'title': HTMLParser.HTMLParser().unescape(udienza[1]), 'url': chunks_url}})
+        index += 1
+
+    return udienze_list
 
 def build_url(query):
     base_url = sys.argv[0]
+    #logging.debug('url: ' + str(query))
     return base_url + '?' + urllib.urlencode(query)
     
-def get_page(url):
-    # download the source HTML for the page using requests
-    # and parse the page using BeautifulSoup
-    return BeautifulSoup(requests.get(url).text, 'html.parser')
     
-def parse_page(page):
-    songs = {}
-    index = 1
-    # the sample below is specific for the page we are scraping
-    # you will need to view the source of the page(s) you are
-    # planning to scrape to find the content you want to display
-    # this will return all the <a> elements on the page:
-    # <a href="some_url">some_text</a>
-    for item in page.find_all('a'):
-        # the item contains a link to an album cover
-        if item['href'].find('.jpg') > 1:
-            # format the url for the album cover to include the site url and url encode any spaces
-            album_cover = '{0}{1}'.format(sample_page, item['href'].replace(' ', '%20'))
-        # the item contains a link to a song containing '.mp3'
-        if item['href'].find('.mp3') > 1:
-            # update dictionary with the album cover url, song filename, and song url
-            songs.update({index: {'album_cover': album_cover, 'title': item['href'], 'url': '{0}{1}'.format(sample_page, item['href'])}})
-            index += 1
-    return songs
-    
-def build_song_list(songs):
-    song_list = []
-    # iterate over the contents of the dictionary songs to build the list
-    for song in songs:
-        # create a list item using the song filename for the label
-        li = xbmcgui.ListItem(label=songs[song]['title'], thumbnailImage=songs[song]['album_cover'])
+def build_udienze_list(udienze):
+    udienze_list = []
+    # iterate over the contents of the dictionary udienze to build the list
+    for udienza in udienze:
+        # create a list item using the udienza filename for the label
+        #li = xbmcgui.ListItem(label=udienze[udienza]['title'], thumbnailImage=udienze[udienza]['album_cover'])
+        li = xbmcgui.ListItem(label=udienze[udienza]['title'])
         # set the fanart to the albumc cover
-        li.setProperty('fanart_image', songs[song]['album_cover'])
+        #li.setProperty('fanart_image', udienze[udienza]['album_cover'])
         # set the list item to playable
         li.setProperty('IsPlayable', 'true')
-        # build the plugin url for Kodi
-        # Example: plugin://plugin.audio.example/?url=http%3A%2F%2Fwww.theaudiodb.com%2Ftestfiles%2F01-pablo_perez-your_ad_here.mp3&mode=stream&title=01-pablo_perez-your_ad_here.mp3
-        url = build_url({'mode': 'stream', 'url': songs[song]['url'], 'title': songs[song]['title']})
+        url = build_url({'mode': 'stream', 'url': udienze[udienza]['url'], 'title': udienze[udienza]['title'].encode('utf-8').strip()})
         # add the current list item to a list
-        song_list.append((url, li, False))
+        udienze_list.append((url, li, False))
+
+    #building next page link
+    next_page=actual_page+1
+    li = xbmcgui.ListItem(label='Next Page ('+str(next_page)+')')
+    logging.debug('Next Page ('+str(next_page)+')')
+    # set the fanart to the albumc cover
+    #li.setProperty('fanart_image', udienze[udienza]['album_cover'])
+    # set the list item to playable
+    li.setProperty('isFolder', 'true')
+    #li.setProperty('IsPlayable', 'false')
+    url = build_url({'mode': 'next', 'page_number': next_page, 'title': 'Next Page ('+str(next_page)+')'})
+    # add the next page link to a list
+    udienze_list.append((url, li, False))
     # add list to Kodi per Martijn
     # http://forum.kodi.tv/showthread.php?tid=209948&pid=2094170#pid2094170
-    xbmcplugin.addDirectoryItems(addon_handle, song_list, len(song_list))
+    xbmcplugin.addDirectoryItems(addon_handle, udienze_list, len(udienze_list))
     # set the content of the directory
     xbmcplugin.setContent(addon_handle, 'songs')
     xbmcplugin.endOfDirectory(addon_handle)
@@ -72,21 +98,30 @@ def play_song(url):
 def main():
     args = urlparse.parse_qs(sys.argv[2][1:])
     mode = args.get('mode', None)
-    
-    # initial launch of add-on
+
     if mode is None:
-        # get the HTML for http://www.theaudiodb.com/testfiles/
-        page = get_page(sample_page)
-        # get the content needed from the page
-        content = parse_page(page)
+        udienze_arr = parse_udienze_list_page(0)
         # display the list of songs in Kodi
-        build_song_list(content)
-    # a song from the list has been selected
+        build_udienze_list(udienze_arr) 
+        # a song from the list has been selected
     elif mode[0] == 'stream':
         # pass the url of the song to play_song
         play_song(args['url'][0])
+    elif mode[0] == 'next':
+        global actual_page
+        xbmcplugin.setContent(addon_handle, 'songs')
+        #addon_handle = int(sys.argv[1])
+        #print addon_handle
+        actual_page+=1
+        #logging.debug('ACTUAL_PAGE: ' + str(actual_page))
+        udienze_arr = parse_udienze_list_page(1)
+        # display the list of songs in Kodi
+        build_udienze_list(udienze_arr) 
+        # a song from the list has been selected
+
     
 if __name__ == '__main__':
-    sample_page = 'http://www.theaudiodb.com/testfiles/'
+    #sample_page = 'http://www.theaudiodb.com/testfiles/'
     addon_handle = int(sys.argv[1])
+    logging.debug('ADDON_HANDLER: '+sys.argv[1]) 
     main()
