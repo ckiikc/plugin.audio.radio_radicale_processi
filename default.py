@@ -40,12 +40,18 @@ def get_chunks_file(url):
 def parse_udienze_list_page(page_num):
     udienze_list={}
     index=1
+    #date_index=0
+    #<span class="date\-display\-single" property="dc:date" datatype="xsd:dateTime" content=".+?">(.+?)</span>
+
     html=get_page('https://www.radioradicale.it/archivio?raggruppamenti_radio=6&field_data_1&field_data_2&page='+str(page_num))
-    udienze=re.findall('<a href="(/scheda/[0-9]+?/processo.+?)">(.+?)</a>',html)
+    udienze=re.findall('<span class="date-display-single" property="dc:date" datatype="xsd:dateTime" content=".+?">(.+?)</span>    \n          <h3><a href="(/scheda/[0-9]+?/processo.+?)">(.+?)</a>',html)
+    #dates=re.findall('<span class="date\-display\-single" property="dc:date" datatype="xsd:dateTime" content=".+?">(.+?)</span>',html)
+    #logging.debug(dates)
     for udienza in udienze:
-        chunks_url=get_chunks_file(radicale_url+udienza[0])
-        udienze_list.update({index: {'title': HTMLParser.HTMLParser().unescape(udienza[1]), 'url': chunks_url}})
+        chunks_url=get_chunks_file(radicale_url+udienza[1])
+        udienze_list.update({index: {'title': udienza[0] + ' - ' +HTMLParser.HTMLParser().unescape(udienza[2]), 'url': chunks_url}})
         index += 1
+        #date_index+=1
 
     return udienze_list
 
