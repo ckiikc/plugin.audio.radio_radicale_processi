@@ -78,21 +78,24 @@ def build_udienze_list(udienze):
 
     #building next page link
     next_page=actual_page+1
-    li = xbmcgui.ListItem(label='Next Page ('+str(next_page)+')')
-    logging.debug('Next Page ('+str(next_page)+')')
+    showing_page=next_page+1
+    li = xbmcgui.ListItem(label='Next Page ('+str(showing_page)+')')
+    logging.debug('Next Page ('+str(showing_page)+')')
     # set the fanart to the albumc cover
     #li.setProperty('fanart_image', udienze[udienza]['album_cover'])
     # set the list item to playable
-    li.setProperty('isFolder', 'true')
+    li.setProperty('IsPlayable', 'false')
     #li.setProperty('IsPlayable', 'false')
-    url = build_url({'mode': 'next', 'page_number': next_page, 'title': 'Next Page ('+str(next_page)+')'})
+    url = build_url({'mode':'next','page_number': next_page, 'title': 'Next Page ('+str(showing_page)+')'})
     # add the next page link to a list
-    udienze_list.append((url, li, False))
+    #udienze_list.append((url, li, False))
     # add list to Kodi per Martijn
     # http://forum.kodi.tv/showthread.php?tid=209948&pid=2094170#pid2094170
     xbmcplugin.addDirectoryItems(addon_handle, udienze_list, len(udienze_list))
+
+    xbmcplugin.addDirectoryItem(handle = addon_handle, url = url, listitem = li, isFolder = True)
     # set the content of the directory
-    xbmcplugin.setContent(addon_handle, 'songs')
+    #xbmcplugin.setContent(addon_handle, 'songs')
     xbmcplugin.endOfDirectory(addon_handle)
     
 def play_song(url):
@@ -115,12 +118,13 @@ def main():
         play_song(args['url'][0])
     elif mode[0] == 'next':
         global actual_page
-        xbmcplugin.setContent(addon_handle, 'songs')
+        next_page=args.get('page_number', 0)
+        actual_page=int(next_page[0])
+        #xbmcplugin.setContent(addon_handle, 'songs')
         #addon_handle = int(sys.argv[1])
         #print addon_handle
-        actual_page+=1
         #logging.debug('ACTUAL_PAGE: ' + str(actual_page))
-        udienze_arr = parse_udienze_list_page(1)
+        udienze_arr = parse_udienze_list_page(actual_page)
         # display the list of songs in Kodi
         build_udienze_list(udienze_arr) 
         # a song from the list has been selected
