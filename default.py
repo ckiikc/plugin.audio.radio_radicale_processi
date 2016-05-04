@@ -1,6 +1,6 @@
 # https://docs.python.org/2.7/
 import os
-import logging
+#import logging
 import sys
 import urllib
 import urlparse
@@ -17,7 +17,6 @@ import re
 import HTMLParser
 
 
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 radicale_url='https://www.radioradicale.it/'
 actual_page=0
 
@@ -40,16 +39,13 @@ def get_chunks_file(url):
 def parse_udienze_list_page(page_num):
     udienze_list={}
     index=1
-    #date_index=0
-    #<span class="date\-display\-single" property="dc:date" datatype="xsd:dateTime" content=".+?">(.+?)</span>
-
+    #page to parse
     html=get_page('https://www.radioradicale.it/archivio?raggruppamenti_radio=6&field_data_1&field_data_2&page='+str(page_num))
+    #find content in page
     udienze=re.findall('<span class="date-display-single" property="dc:date" datatype="xsd:dateTime" content=".+?">(.+?)</span>    \n          <h3><a href="(/scheda/[0-9]+?/processo.+?)">(.+?)</a>',html)
-    #dates=re.findall('<span class="date\-display\-single" property="dc:date" datatype="xsd:dateTime" content=".+?">(.+?)</span>',html)
-    #logging.debug(dates)
     for udienza in udienze:
-        chunks_url=get_chunks_file(radicale_url+udienza[1])
-        udienze_list.update({index: {'title': udienza[0] + ' - ' +HTMLParser.HTMLParser().unescape(udienza[2]), 'url': chunks_url}})
+        url=radicale_url+udienza[1]
+        udienze_list.update({index: {'title': udienza[0] + ' - ' +HTMLParser.HTMLParser().unescape(udienza[2]), 'url': url}})
         index += 1
         #date_index+=1
 
@@ -80,27 +76,24 @@ def build_udienze_list(udienze):
     next_page=actual_page+1
     showing_page=next_page+1
     li = xbmcgui.ListItem(label='Next Page ('+str(showing_page)+')')
-    logging.debug('Next Page ('+str(showing_page)+')')
+    #logging.debug('Next Page ('+str(showing_page)+')')
     # set the fanart to the albumc cover
     #li.setProperty('fanart_image', udienze[udienza]['album_cover'])
     # set the list item to playable
     li.setProperty('IsPlayable', 'false')
     #li.setProperty('IsPlayable', 'false')
     url = build_url({'mode':'next','page_number': next_page, 'title': 'Next Page ('+str(showing_page)+')'})
-    # add the next page link to a list
-    #udienze_list.append((url, li, False))
-    # add list to Kodi per Martijn
-    # http://forum.kodi.tv/showthread.php?tid=209948&pid=2094170#pid2094170
-    xbmcplugin.addDirectoryItems(addon_handle, udienze_list, len(udienze_list))
 
+    xbmcplugin.addDirectoryItems(addon_handle, udienze_list, len(udienze_list))
     xbmcplugin.addDirectoryItem(handle = addon_handle, url = url, listitem = li, isFolder = True)
     # set the content of the directory
     #xbmcplugin.setContent(addon_handle, 'songs')
     xbmcplugin.endOfDirectory(addon_handle)
     
 def play_song(url):
+    chunks_url=get_chunks_file(url)
     # set the path of the song to a list item
-    play_item = xbmcgui.ListItem(path=url)
+    play_item = xbmcgui.ListItem(path=chunks_url)
     # the list item is ready to be played by Kodi
     xbmcplugin.setResolvedUrl(addon_handle, True, listitem=play_item)
     
@@ -121,9 +114,6 @@ def main():
         next_page=args.get('page_number', 0)
         actual_page=int(next_page[0])
         #xbmcplugin.setContent(addon_handle, 'songs')
-        #addon_handle = int(sys.argv[1])
-        #print addon_handle
-        #logging.debug('ACTUAL_PAGE: ' + str(actual_page))
         udienze_arr = parse_udienze_list_page(actual_page)
         # display the list of songs in Kodi
         build_udienze_list(udienze_arr) 
@@ -131,7 +121,6 @@ def main():
 
     
 if __name__ == '__main__':
-    #sample_page = 'http://www.theaudiodb.com/testfiles/'
     addon_handle = int(sys.argv[1])
-    logging.debug('ADDON_HANDLER: '+sys.argv[1]) 
+    #logging.debug('ADDON_HANDLER: '+sys.argv[1]) 
     main()
