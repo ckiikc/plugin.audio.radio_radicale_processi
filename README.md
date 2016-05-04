@@ -13,4 +13,3 @@ url: http://www.radioradicale.it/archivio?raggruppamenti_radio=6
 
 1. adding a list of trials from which get a list of all the hearings of that trial
 
-
