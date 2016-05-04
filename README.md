@@ -1,5 +1,5 @@
 # plugin.audio.radio_radicale_processi
-Online Streaming Audio Processi from Radio Radicale Add-on for Kodi 
+Kodi Add-on - Streaming hearings from Radio Radicale trials web site
 
 url: http://www.radioradicale.it/archivio?raggruppamenti_radio=6 
 
