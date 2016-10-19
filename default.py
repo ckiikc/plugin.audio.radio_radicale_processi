@@ -29,6 +29,7 @@ def get_page(url):
 def get_chunks_file(url):
     html = get_page(url)
     #https://video.radioradicale.it/aac-1/_definst_/2016/10/18/MP857128.m4a/playlist.m3u8
+    #chunklist_w448231132.m3u8
     p=re.findall('(https://video\.radioradicale\.it/aac\-1/_definst_/[0-9]{4}/[0-9]{2}/[0-9]{2}/.+\.m4a/)playlist\.m3u8',html)
     tracker_base_url=p[0]
     tracker_file_txt = get_page(tracker_base_url + 'playlist.m3u8')
@@ -70,7 +71,7 @@ def build_udienze_list(udienze):
         #li.setProperty('fanart_image', udienze[udienza]['album_cover'])
         # set the list item to playable
         li.setProperty('IsPlayable', 'true')
-        li.setSubtitles(['special://temp/subtitle.srt'])
+        #li.setSubtitles(['special://temp/subtitle.srt'])
         #li.setProperty('upnp:subtitle:1', 'https://www.radioradicale.it/trascrizioni/8/3/2/3/7/832372.vtt')
         #li.setSubtitles(('https://www.radioradicale.it/trascrizioni/8/3/2/3/7/832372.vtt',))
         url = build_url({'mode': 'stream', 'url': udienze[udienza]['url'], 'title': udienze[udienza]['title'].encode('utf-8').strip()})
